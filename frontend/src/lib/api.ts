@@ -2,7 +2,7 @@
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api/v1';
 
-// Types matching the backend models
+// Types matching the backend models [ADDED] 
 export interface User {
   id: string;
   email: string;
