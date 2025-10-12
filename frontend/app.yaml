@@ -1,0 +1,39 @@
+# Google Cloud App Engine configuration for Frontend
+runtime: custom
+env: flex
+
+# Frontend service configuration
+service: frontend
+automatic_scaling:
+  min_num_instances: 1
+  max_num_instances: 5
+  cool_down_period: 60s
+  cpu_utilization:
+    target_utilization: 0.6
+
+resources:
+  cpu: 0.5
+  memory_gb: 0.5
+  disk_size_gb: 10
+
+env_variables:
+  VITE_API_URL: "https://backend-dot-your-project-id.appspot.com/api/v1"
+
+# Health check configuration
+readiness_check:
+  path: "/health"
+  check_interval_sec: 5
+  timeout_sec: 4
+  failure_threshold: 2
+  success_threshold: 2
+
+liveness_check:
+  path: "/health"
+  check_interval_sec: 30
+  timeout_sec: 4
+  failure_threshold: 2
+  success_threshold: 2
+
+# Network configuration
+network:
+  name: default
