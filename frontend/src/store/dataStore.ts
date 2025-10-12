@@ -186,12 +186,9 @@ export const useDataStore = create<DataState>((set, get) => ({
     set({ isLoading: true, error: null });
     try {
       await apiClient.updateProjectStatus(orgId, projectId, status);
-      set(state => ({
-        projects: state.projects.map(p =>
-          p.id === projectId ? { ...p, status } : p
-        ),
-        isLoading: false
-      }));
+      // Reload projects to get the updated status from backend
+      await get().loadProjects(orgId);
+      set({ isLoading: false });
     } catch (error) {
       set({ 
         error: error instanceof Error ? error.message : 'Failed to update project status',

@@ -12,6 +12,7 @@ import { toast } from 'sonner';
 interface CreateTaskModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  orgId: string;
   projectId: string;
   projectAssignees: User[];
 }
@@ -19,6 +20,7 @@ interface CreateTaskModalProps {
 export const CreateTaskModal = ({
   open,
   onOpenChange,
+  orgId,
   projectId,
   projectAssignees,
 }: CreateTaskModalProps) => {
@@ -40,13 +42,20 @@ export const CreateTaskModal = ({
 
     if (!user) return;
 
+    // Convert date to ISO string if provided
+    let deadlineISO: string | undefined = undefined;
+    if (deadline) {
+      // Convert YYYY-MM-DD to ISO datetime string
+      deadlineISO = new Date(deadline + 'T23:59:59.000Z').toISOString();
+    }
+
     createTask(
+      orgId,
       projectId,
       name,
       description,
-      deadline,
-      selectedAssignees,
-      user.id
+      deadlineISO,
+      selectedAssignees
     );
 
     toast.success('Task created successfully!');

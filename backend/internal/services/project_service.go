@@ -58,14 +58,14 @@ func (s *ProjectService) CreateProject(req *models.ProjectCreateRequest, orgID, 
 	}
 
 	// Add assignees (including creator)
-	assigneeIDs := append(req.AssigneeIDs, creatorID)
-	
+	assigneeIDs := append(req.AssigneeIDs, createdBy)
+
 	// Remove duplicates
 	uniqueAssignees := make(map[uuid.UUID]bool)
 	for _, id := range assigneeIDs {
 		uniqueAssignees[id] = true
 	}
-	
+
 	for assigneeID := range uniqueAssignees {
 		assignee := &models.ProjectAssignee{
 			ProjectID:  project.ID,

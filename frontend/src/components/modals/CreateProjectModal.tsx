@@ -141,26 +141,42 @@ export const CreateProjectModal = ({
 
           <div className="space-y-2">
             <Label>Assign Team Members</Label>
+            <p className="text-xs text-muted-foreground">
+              You will be automatically assigned to this project as the creator.
+            </p>
             <div className="space-y-2 max-h-[200px] overflow-y-auto border rounded-md p-3">
-              {orgMembers && orgMembers.length > 0 ? (
-                orgMembers.map(member => (
-                  <div key={member.id} className="flex items-center space-x-2">
-                    <Checkbox
-                      id={`member-${member.id}`}
-                      checked={selectedAssignees.includes(member.id)}
-                      onCheckedChange={() => toggleAssignee(member.id)}
-                    />
-                    <label
-                      htmlFor={`member-${member.id}`}
-                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
-                    >
-                      {member.full_name} ({member.email})
-                    </label>
-                  </div>
-                ))
-              ) : (
-                <p className="text-sm text-muted-foreground">No team members available</p>
-              )}
+              {(() => {
+                // Create a list that includes current user + org members, removing duplicates
+                const allMembers = [...(orgMembers || [])];
+                
+                // Add current user if not already in the list
+                if (user && !allMembers.find(member => member.id === user.id)) {
+                  allMembers.unshift(user);
+                }
+                
+                return allMembers.length > 0 ? (
+                  allMembers.map(member => (
+                    <div key={member.id} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={`member-${member.id}`}
+                        checked={selectedAssignees.includes(member.id)}
+                        onCheckedChange={() => toggleAssignee(member.id)}
+                      />
+                      <label
+                        htmlFor={`member-${member.id}`}
+                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                      >
+                        {member.full_name || member.email} ({member.email})
+                        {member.id === user?.id && (
+                          <span className="ml-1 text-xs text-primary font-medium">(You)</span>
+                        )}
+                      </label>
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-sm text-muted-foreground">No team members available</p>
+                );
+              })()}
             </div>
           </div>
 

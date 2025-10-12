@@ -309,13 +309,23 @@ func (h *ProjectHandler) MoveProject(c *fiber.Ctx) error {
 		return c.Status(403).JSON(fiber.Map{"error": "Not a member of this organization"})
 	}
 
-	// Check if user is project assignee
+	// Get project to check ownership
+	project, err := h.projectService.GetProjectByID(projectID)
+	if err != nil {
+		return c.Status(404).JSON(fiber.Map{"error": "Project not found"})
+	}
+
+	if project.OrgID != orgID {
+		return c.Status(403).JSON(fiber.Map{"error": "Project does not belong to this organization"})
+	}
+
+	// Check if user is project assignee or creator
 	isAssignee, err := h.projectService.IsProjectAssignee(projectID, userID)
 	if err != nil {
 		return c.Status(500).JSON(fiber.Map{"error": "Failed to check project assignment"})
 	}
 
-	if !isAssignee {
+	if !isAssignee && project.CreatedBy != userID {
 		return c.Status(403).JSON(fiber.Map{"error": "Not assigned to this project"})
 	}
 

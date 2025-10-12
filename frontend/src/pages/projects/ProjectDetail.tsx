@@ -214,6 +214,7 @@ const ProjectDetail = () => {
         <CreateTaskModal
           open={isCreateModalOpen}
           onOpenChange={setIsCreateModalOpen}
+          orgId={orgId}
           projectId={projectId}
           projectAssignees={project.assignees || []}
         />
