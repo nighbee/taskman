@@ -1,49 +1,31 @@
 version: '3.8'
 
 services:
-  # PostgreSQL Database
-  postgres:
-    image: postgres:15-alpine
-    container_name: taskman-postgres
-    environment:
-      POSTGRES_DB: taskman
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: password
-    ports:
-      - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  # Backend API
+  # Backend API (connects to Supabase, no local DB needed)
   backend:
     build:
       context: ./backend
       dockerfile: Dockerfile
     container_name: taskman-backend
     environment:
-      DB_HOST: postgres
+      DB_HOST: aws-1-us-east-2.pooler.supabase.com
       DB_PORT: 5432
-      DB_USER: postgres
-      DB_PASSWORD: password
-      DB_NAME: taskman
-      DB_SSL_MODE: disable
-      JWT_SECRET: your-super-secret-jwt-key-change-this-in-production
-      JWT_EXPIRY: 24h
+      DB_USER: postgres.ahxqouifwuhbahbpuojp
+      DB_PASSWORD: altok2004
+      DB_NAME: postgres
+      DB_SSL_MODE: require
+      SUPABASE_URL: https://ahxqouifwuhbahbpuojp.supabase.co
+      SUPABASE_ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFoeHFvdWlmd3VoYmFoYnB1b2pwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjAxMTU4NjgsImV4cCI6MjA3NTY5MTg2OH0.k-Juck1qA-1LLkEaIXLYtH_G7iaAxxqN_1123NTS0f0
+      SUPABASE_SERVICE_ROLE_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFoeHFvdWlmd3VoYmFoYnB1b2pwIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2MDExNTg2OCwiZXhwIjoyMDc1NjkxODY4fQ.X-Of1oM1X0IqETfrI2jf8HhU9x_0JRXmS6kV9ILkxg4
+      JWT_SECRET: NEhy72hq9WKTS1XofGh4+uDJlTLf6XszqHoyUnFUMUCP/A15BdIJTqHB/N2WZsaKX2h1UTHORcktSDZGP/alDA==
+      JWT_EXPIRY: 1h
       SERVER_PORT: 8080
       SERVER_HOST: 0.0.0.0
       LOG_LEVEL: info
-      CORS_ALLOWED_ORIGINS: http://localhost:3000,http://localhost:5173
-      RUN_MIGRATIONS: true
+      CORS_ALLOWED_ORIGINS: http://localhost:3000,http://localhost:8080,http://localhost:5173
+      RUN_MIGRATIONS: false  # Set to true only for one-time migrations
     ports:
       - "8080:8080"
-    depends_on:
-      postgres:
-        condition: service_healthy
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://127.0.0.1:8080/health"]
       interval: 30s
@@ -67,6 +49,3 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
-
-volumes:
-  postgres_data:
