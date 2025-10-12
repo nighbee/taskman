@@ -50,8 +50,8 @@ const ProjectsBoard = () => {
       .filter(p => p.status === status)
       .sort((a, b) => {
         // User's projects first
-        const aIsUser = a.createdBy === user?.id || a.assignees.some(u => u.id === user?.id);
-        const bIsUser = b.createdBy === user?.id || b.assignees.some(u => u.id === user?.id);
+        const aIsUser = a.createdBy === user?.id || (a.assignees && a.assignees.some(u => u.id === user?.id));
+        const bIsUser = b.createdBy === user?.id || (b.assignees && b.assignees.some(u => u.id === user?.id));
         if (aIsUser && !bIsUser) return -1;
         if (!aIsUser && bIsUser) return 1;
         return 0;
@@ -72,7 +72,7 @@ const ProjectsBoard = () => {
     const overStatus = over.id as ProjectStatus;
 
     if (activeProject && activeProject.status !== overStatus) {
-      updateProjectStatus(activeProject.id, overStatus);
+      updateProjectStatus(orgId, activeProject.id, overStatus);
     }
   };
 
@@ -123,7 +123,7 @@ const ProjectsBoard = () => {
                   items={statusProjects.map(project => {
                     const isUserInvolved =
                       project.createdBy === user?.id ||
-                      project.assignees.some(u => u.id === user?.id);
+                      (project.assignees && project.assignees.some(u => u.id === user?.id));
 
                     return (
                       <KanbanCard
@@ -134,6 +134,8 @@ const ProjectsBoard = () => {
                         deadline={project.deadline}
                         assignees={project.assignees}
                         isUserInvolved={isUserInvolved}
+                        currentStatus={project.status}
+                        onStatusChange={(newStatus) => updateProjectStatus(orgId, project.id, newStatus)}
                         onClick={() => handleProjectClick(project.id)}
                       />
                     );
@@ -164,7 +166,7 @@ const ProjectsBoard = () => {
           open={isCreateModalOpen}
           onOpenChange={setIsCreateModalOpen}
           orgId={orgId}
-          orgMembers={org.members}
+          orgMembers={org.members || []}
         />
       )}
     </div>

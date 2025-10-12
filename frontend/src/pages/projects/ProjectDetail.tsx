@@ -44,14 +44,14 @@ const ProjectDetail = () => {
     })
   );
 
-  const isUserAssignee = project?.assignees.some(a => a.id === user?.id) || project?.createdBy === user?.id;
+  const isUserAssignee = (project?.assignees && project.assignees.some(a => a.id === user?.id)) || project?.createdBy === user?.id;
 
   const getTasksByStatus = (status: TaskStatus) => {
     return tasks
       .filter(t => t.status === status)
       .sort((a, b) => {
-        const aIsUser = a.createdBy === user?.id || a.assignees.some(u => u.id === user?.id);
-        const bIsUser = b.createdBy === user?.id || b.assignees.some(u => u.id === user?.id);
+        const aIsUser = a.createdBy === user?.id || (a.assignees && a.assignees.some(u => u.id === user?.id));
+        const bIsUser = b.createdBy === user?.id || (b.assignees && b.assignees.some(u => u.id === user?.id));
         if (aIsUser && !bIsUser) return -1;
         if (!aIsUser && bIsUser) return 1;
         return 0;
@@ -122,16 +122,18 @@ const ProjectDetail = () => {
                 </div>
               )}
               
-              <div className="flex items-center gap-2">
-                <Users className="h-4 w-4 text-muted-foreground" />
-                <div className="flex gap-1">
-                  {project.assignees.map(assignee => (
-                    <Badge key={assignee.id} variant="secondary">
-                      {assignee.fullName}
-                    </Badge>
-                  ))}
+              {project.assignees && project.assignees.length > 0 && (
+                <div className="flex items-center gap-2">
+                  <Users className="h-4 w-4 text-muted-foreground" />
+                  <div className="flex gap-1">
+                    {project.assignees.map(assignee => (
+                      <Badge key={assignee.id} variant="secondary">
+                        {assignee.full_name || assignee.email}
+                      </Badge>
+                    ))}
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
           </div>
 
@@ -173,7 +175,7 @@ const ProjectDetail = () => {
                   items={statusTasks.map(task => {
                     const isUserInvolved =
                       task.createdBy === user?.id ||
-                      task.assignees.some(u => u.id === user?.id);
+                      (task.assignees && task.assignees.some(u => u.id === user?.id));
 
                     return (
                       <KanbanCard
@@ -213,7 +215,7 @@ const ProjectDetail = () => {
           open={isCreateModalOpen}
           onOpenChange={setIsCreateModalOpen}
           projectId={projectId}
-          projectAssignees={project.assignees}
+          projectAssignees={project.assignees || []}
         />
       )}
     </div>

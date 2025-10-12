@@ -63,6 +63,8 @@ export interface CreateProjectRequest {
   description: string;
   deadline?: string;
   assignee_ids?: string[];
+  created_by?: string;
+  status?: 'idea' | 'in-progress' | 'finished';
 }
 
 export interface CreateTaskRequest {
@@ -140,42 +142,47 @@ class ApiClient {
 
   // Organization endpoints
   async getOrganizations(): Promise<Organization[]> {
-    return this.request<Organization[]>('/organizations');
+    const response = await this.request<{organizations: Organization[]}>('/organizations');
+    return response.organizations;
   }
 
   async createOrganization(data: CreateOrgRequest): Promise<Organization> {
-    return this.request<Organization>('/organizations', {
+    const response = await this.request<{organization: Organization}>('/organizations', {
       method: 'POST',
       body: JSON.stringify(data),
     });
+    return response.organization;
   }
 
   async joinOrganization(data: JoinOrgRequest): Promise<Organization> {
-    return this.request<Organization>('/organizations/join', {
+    const response = await this.request<{organization: Organization}>('/organizations/join', {
       method: 'POST',
       body: JSON.stringify(data),
     });
+    return response.organization;
   }
 
   // Project endpoints
   async getProjects(orgId: string): Promise<Project[]> {
-    return this.request<Project[]>(`/organizations/${orgId}/projects`);
+    const response = await this.request<{projects: Project[]}>(`/organizations/${orgId}/projects`);
+    return response.projects;
   }
 
   async createProject(orgId: string, data: CreateProjectRequest): Promise<Project> {
-    return this.request<Project>(`/organizations/${orgId}/projects`, {
+    const response = await this.request<{project: Project}>(`/organizations/${orgId}/projects`, {
       method: 'POST',
       body: JSON.stringify(data),
     });
+    return response.project;
   }
 
   async updateProjectStatus(
     orgId: string,
     projectId: string,
     status: 'idea' | 'in-progress' | 'finished'
-  ): Promise<Project> {
-    return this.request<Project>(`/organizations/${orgId}/projects/${projectId}/status`, {
-      method: 'PUT',
+  ): Promise<void> {
+    await this.request<void>(`/organizations/${orgId}/projects/${projectId}/move`, {
+      method: 'PATCH',
       body: JSON.stringify({ status }),
     });
   }

@@ -53,6 +53,7 @@ type ProjectCreateRequest struct {
 	Description string      `json:"description" validate:"max=500"`
 	Deadline    *time.Time  `json:"deadline"`
 	AssigneeIDs []uuid.UUID `json:"assignee_ids"`
+	Status      string      `json:"status" validate:"oneof=idea in-progress finished"`
 }
 
 // ProjectUpdateRequest represents the request to update a project
@@ -77,6 +78,20 @@ type ProjectResponse struct {
 	UpdatedAt   time.Time      `json:"updated_at"`
 	Assignees   []UserResponse `json:"assignees"`
 	TaskCount   int            `json:"task_count"`
+}
+
+// ProjectQueryResult represents the result from database query (without assignees)
+type ProjectQueryResult struct {
+	ID          uuid.UUID     `json:"id"`
+	OrgID       uuid.UUID     `json:"org_id"`
+	Name        string        `json:"name"`
+	Description string        `json:"description"`
+	Status      ProjectStatus `json:"status"`
+	CreatedBy   uuid.UUID     `json:"created_by"`
+	Deadline    *time.Time    `json:"deadline"`
+	CreatedAt   time.Time     `json:"created_at"`
+	UpdatedAt   time.Time     `json:"updated_at"`
+	TaskCount   int           `json:"task_count"`
 }
 
 // ToResponse converts a Project to ProjectResponse

@@ -112,21 +112,25 @@ export const CreateTaskModal = ({
           <div className="space-y-2">
             <Label>Assign to (Project Members Only)</Label>
             <div className="space-y-2 max-h-[150px] overflow-y-auto border rounded-md p-3">
-              {projectAssignees.map(member => (
-                <div key={member.id} className="flex items-center space-x-2">
-                  <Checkbox
-                    id={`task-member-${member.id}`}
-                    checked={selectedAssignees.includes(member.id)}
-                    onCheckedChange={() => toggleAssignee(member.id)}
-                  />
-                  <label
-                    htmlFor={`task-member-${member.id}`}
-                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
-                  >
-                    {member.fullName}
-                  </label>
-                </div>
-              ))}
+              {projectAssignees && projectAssignees.length > 0 ? (
+                projectAssignees.map(member => (
+                  <div key={member.id} className="flex items-center space-x-2">
+                    <Checkbox
+                      id={`task-member-${member.id}`}
+                      checked={selectedAssignees.includes(member.id)}
+                      onCheckedChange={() => toggleAssignee(member.id)}
+                    />
+                    <label
+                      htmlFor={`task-member-${member.id}`}
+                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                    >
+                      {member.full_name || member.email}
+                    </label>
+                  </div>
+                ))
+              ) : (
+                <p className="text-sm text-muted-foreground">No project members available</p>
+              )}
             </div>
           </div>
 

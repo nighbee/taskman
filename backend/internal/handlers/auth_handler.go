@@ -87,6 +87,23 @@ func (h *AuthHandler) Login(c *fiber.Ctx) error {
 	})
 }
 
+// GetMe handles getting current user info
+func (h *AuthHandler) GetMe(c *fiber.Ctx) error {
+	userID, err := middleware.GetUserIDFromContext(c)
+	if err != nil {
+		return c.Status(401).JSON(fiber.Map{"error": "Invalid user context"})
+	}
+
+	user, err := h.userService.GetUserByID(userID)
+	if err != nil {
+		return c.Status(404).JSON(fiber.Map{"error": "User not found"})
+	}
+
+	return c.JSON(fiber.Map{
+		"user": user.ToResponse(),
+	})
+}
+
 // RefreshToken handles token refresh
 func (h *AuthHandler) RefreshToken(c *fiber.Ctx) error {
 	authHeader := c.Get("Authorization")

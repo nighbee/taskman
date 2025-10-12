@@ -42,7 +42,7 @@ interface DataState {
   selectOrg: (orgId: string) => void;
   
   // Project actions
-  createProject: (orgId: string, name: string, description: string, deadline?: string, assigneeIds?: string[]) => Promise<void>;
+  createProject: (orgId: string, name: string, description: string, deadline?: string, assigneeIds?: string[], createdBy?: string, status?: ProjectStatus) => Promise<void>;
   updateProjectStatus: (orgId: string, projectId: string, status: ProjectStatus) => Promise<void>;
   selectProject: (projectId: string) => void;
   
@@ -77,6 +77,7 @@ export const useDataStore = create<DataState>((set, get) => ({
       set({ orgs, isLoading: false });
     } catch (error) {
       set({ 
+        orgs: [], // Reset to empty array on error
         error: error instanceof Error ? error.message : 'Failed to load organizations',
         isLoading: false 
       });
@@ -121,7 +122,7 @@ export const useDataStore = create<DataState>((set, get) => ({
     try {
       const newOrg = await apiClient.createOrganization({ name });
       set(state => ({ 
-        orgs: [...state.orgs, newOrg],
+        orgs: [...(Array.isArray(state.orgs) ? state.orgs : []), newOrg],
         isLoading: false 
       }));
       return newOrg;
@@ -158,7 +159,7 @@ export const useDataStore = create<DataState>((set, get) => ({
   },
   
   // Project actions
-  createProject: async (orgId: string, name: string, description: string, deadline?: string, assigneeIds?: string[]) => {
+  createProject: async (orgId: string, name: string, description: string, deadline?: string, assigneeIds?: string[], createdBy?: string, status?: ProjectStatus) => {
     set({ isLoading: true, error: null });
     try {
       await apiClient.createProject(orgId, {
@@ -166,6 +167,8 @@ export const useDataStore = create<DataState>((set, get) => ({
         description,
         deadline,
         assignee_ids: assigneeIds,
+        created_by: createdBy,
+        status: status || 'idea',
       });
       // Reload projects for the organization
       await get().loadProjects(orgId);

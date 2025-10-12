@@ -9,10 +9,11 @@ import { useAuthStore } from '@/store/authStore';
 import { useDataStore } from '@/store/dataStore';
 import { Building2, Plus, Key, Users } from 'lucide-react';
 import { toast } from 'sonner';
+import HealthCheck from '@/components/HealthCheck';
 
 const OrgSelection = () => {
   const { user } = useAuthStore();
-  const { orgs, createOrg, joinOrg, selectOrg } = useDataStore();
+  const { orgs, createOrg, joinOrg, selectOrg, isLoading, error, loadOrganizations } = useDataStore();
   const navigate = useNavigate();
   
   const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -20,32 +21,51 @@ const OrgSelection = () => {
   const [newOrgName, setNewOrgName] = useState('');
   const [inviteCode, setInviteCode] = useState('');
 
-  const userOrgs = orgs.filter(org =>
-    org.members.some(m => m.id === user?.id)
-  );
+  // Defensive programming: ensure orgs is always an array
+  const safeOrgs = Array.isArray(orgs) ? orgs : [];
+  
+  // For now, show all orgs since the backend doesn't include members in the response
+  // TODO: Update backend to include members or create a separate endpoint
+  const userOrgs = safeOrgs;
 
-  const handleCreateOrg = () => {
+  const handleCreateOrg = async () => {
     if (!newOrgName.trim() || !user) return;
     
-    const org = createOrg(newOrgName, user.id, user.email, user.fullName);
-    toast.success(`Organization "${org.name}" created!`);
-    setIsCreateOpen(false);
-    setNewOrgName('');
-    selectOrg(org.id);
-    navigate(`/orgs/${org.id}/projects`);
+    try {
+      const org = await createOrg(newOrgName);
+      console.log('Created org:', org); // Debug log
+      
+      if (!org.id) {
+        toast.error('Organization created but ID not returned');
+        return;
+      }
+      
+      toast.success(`Organization "${org.name}" created!`);
+      setIsCreateOpen(false);
+      setNewOrgName('');
+      selectOrg(org.id);
+      navigate(`/orgs/${org.id}/projects`);
+    } catch (error) {
+      console.error('Error creating org:', error); // Debug log
+      toast.error('Failed to create organization');
+    }
   };
 
-  const handleJoinOrg = () => {
+  const handleJoinOrg = async () => {
     if (!inviteCode.trim() || !user) return;
     
-    const success = joinOrg(inviteCode.toUpperCase(), user.id, user.email, user.fullName);
-    
-    if (success) {
-      toast.success('Successfully joined organization!');
-      setIsJoinOpen(false);
-      setInviteCode('');
-    } else {
-      toast.error('Invalid invite code');
+    try {
+      const success = await joinOrg(inviteCode.toUpperCase());
+      
+      if (success) {
+        toast.success('Successfully joined organization!');
+        setIsJoinOpen(false);
+        setInviteCode('');
+      } else {
+        toast.error('Invalid invite code');
+      }
+    } catch (error) {
+      toast.error('Failed to join organization');
     }
   };
 
@@ -62,6 +82,20 @@ const OrgSelection = () => {
           <p className="text-muted-foreground">
             Select an organization to start managing projects
           </p>
+          <div className="mt-2">
+            <HealthCheck />
+          </div>
+          {error && (
+            <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-md">
+              <p className="text-red-800 text-sm">{error}</p>
+              <button 
+                onClick={loadOrganizations}
+                className="mt-2 text-red-600 hover:text-red-800 text-sm underline"
+              >
+                Retry
+              </button>
+            </div>
+          )}
         </div>
 
         <div className="grid gap-6 mb-6">
@@ -78,11 +112,11 @@ const OrgSelection = () => {
             </Card>
           )}
 
-          {userOrgs.map(org => (
+          {userOrgs.map((org, index) => (
             <Card
-              key={org.id}
+              key={org.id || `org-${index}`}
               className="cursor-pointer hover:shadow-lg transition-shadow"
-              onClick={() => handleSelectOrg(org.id)}
+              onClick={() => org.id && handleSelectOrg(org.id)}
             >
               <CardHeader>
                 <div className="flex items-start justify-between">
@@ -90,11 +124,11 @@ const OrgSelection = () => {
                     <CardTitle className="text-xl">{org.name}</CardTitle>
                     <CardDescription className="mt-2 flex items-center gap-2">
                       <Users className="h-4 w-4" />
-                      {org.members.length} member{org.members.length !== 1 ? 's' : ''}
+                      {org.members ? org.members.length : 'Unknown'} member{org.members && org.members.length !== 1 ? 's' : ''}
                     </CardDescription>
                   </div>
                   <div className="text-xs text-muted-foreground">
-                    Code: <span className="font-mono font-semibold">{org.inviteCode}</span>
+                    Code: <span className="font-mono font-semibold">{org.invite_code}</span>
                   </div>
                 </div>
               </CardHeader>
@@ -128,8 +162,8 @@ const OrgSelection = () => {
                     onKeyDown={(e) => e.key === 'Enter' && handleCreateOrg()}
                   />
                 </div>
-                <Button onClick={handleCreateOrg} className="w-full">
-                  Create
+                <Button onClick={handleCreateOrg} className="w-full" disabled={isLoading}>
+                  {isLoading ? 'Creating...' : 'Create'}
                 </Button>
               </div>
             </DialogContent>
@@ -161,8 +195,8 @@ const OrgSelection = () => {
                     className="font-mono"
                   />
                 </div>
-                <Button onClick={handleJoinOrg} className="w-full">
-                  Join Organization
+                <Button onClick={handleJoinOrg} className="w-full" disabled={isLoading}>
+                  {isLoading ? 'Joining...' : 'Join Organization'}
                 </Button>
               </div>
             </DialogContent>

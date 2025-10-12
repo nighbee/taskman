@@ -67,6 +67,12 @@ func (s *OrganizationService) CreateOrganization(req *models.OrganizationCreateR
 		return nil, fmt.Errorf("failed to create organization: %w", err)
 	}
 
+	// Ensure the org ID is set (in case of auto-generation)
+	if org.ID == uuid.Nil {
+		tx.Rollback()
+		return nil, fmt.Errorf("organization ID not set after creation")
+	}
+
 	// Add creator as admin member
 	member := &models.OrgMember{
 		OrgID:    org.ID,

@@ -82,6 +82,7 @@ func main() {
 	protected.Use(middleware.AuthMiddleware(jwtManager))
 
 	// Auth routes
+	protected.Get("/auth/me", authHandler.GetMe)
 	protected.Get("/auth/profile", authHandler.GetProfile)
 	protected.Put("/auth/profile", authHandler.UpdateProfile)
 

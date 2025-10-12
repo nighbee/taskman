@@ -21,11 +21,24 @@ func NewProjectService(db *gorm.DB) *ProjectService {
 
 // CreateProject creates a new project
 func (s *ProjectService) CreateProject(req *models.ProjectCreateRequest, orgID, createdBy uuid.UUID) (*models.Project, error) {
+	// Set default status if not provided
+	status := models.ProjectStatusIdea
+	if req.Status != "" {
+		switch req.Status {
+		case "idea":
+			status = models.ProjectStatusIdea
+		case "in-progress":
+			status = models.ProjectStatusInProgress
+		case "finished":
+			status = models.ProjectStatusFinished
+		}
+	}
+
 	project := &models.Project{
 		OrgID:       orgID,
 		Name:        req.Name,
 		Description: req.Description,
-		Status:      models.ProjectStatusIdea,
+		Status:      status,
 		CreatedBy:   createdBy,
 		Deadline:    req.Deadline,
 	}
@@ -44,8 +57,16 @@ func (s *ProjectService) CreateProject(req *models.ProjectCreateRequest, orgID, 
 		return nil, fmt.Errorf("failed to create project: %w", err)
 	}
 
-	// Add assignees
-	for _, assigneeID := range req.AssigneeIDs {
+	// Add assignees (including creator)
+	assigneeIDs := append(req.AssigneeIDs, creatorID)
+	
+	// Remove duplicates
+	uniqueAssignees := make(map[uuid.UUID]bool)
+	for _, id := range assigneeIDs {
+		uniqueAssignees[id] = true
+	}
+	
+	for assigneeID := range uniqueAssignees {
 		assignee := &models.ProjectAssignee{
 			ProjectID:  project.ID,
 			UserID:     assigneeID,
@@ -81,7 +102,7 @@ func (s *ProjectService) GetProjectByID(id uuid.UUID) (*models.Project, error) {
 
 // GetProjectsByOrg retrieves all projects for an organization
 func (s *ProjectService) GetProjectsByOrg(orgID uuid.UUID, userID *uuid.UUID) ([]models.ProjectResponse, error) {
-	var projects []models.ProjectResponse
+	var queryResults []models.ProjectQueryResult
 
 	query := s.db.Table("projects p").
 		Select("p.id, p.org_id, p.name, p.description, p.status, p.created_by, p.deadline, p.created_at, p.updated_at, COUNT(t.id) as task_count").
@@ -92,18 +113,32 @@ func (s *ProjectService) GetProjectsByOrg(orgID uuid.UUID, userID *uuid.UUID) ([
 	// Order by creation date
 	query = query.Order("p.created_at DESC")
 
-	err := query.Scan(&projects).Error
+	err := query.Scan(&queryResults).Error
 	if err != nil {
 		return nil, fmt.Errorf("failed to get projects: %w", err)
 	}
 
-	// Get assignees for each project
-	for i := range projects {
-		assignees, err := s.GetProjectAssignees(projects[i].ID)
+	// Convert to ProjectResponse and get assignees for each project
+	projects := make([]models.ProjectResponse, len(queryResults))
+	for i, result := range queryResults {
+		assignees, err := s.GetProjectAssignees(result.ID)
 		if err != nil {
 			return nil, fmt.Errorf("failed to get project assignees: %w", err)
 		}
-		projects[i].Assignees = assignees
+
+		projects[i] = models.ProjectResponse{
+			ID:          result.ID,
+			OrgID:       result.OrgID,
+			Name:        result.Name,
+			Description: result.Description,
+			Status:      result.Status,
+			CreatedBy:   result.CreatedBy,
+			Deadline:    result.Deadline,
+			CreatedAt:   result.CreatedAt,
+			UpdatedAt:   result.UpdatedAt,
+			Assignees:   assignees,
+			TaskCount:   result.TaskCount,
+		}
 	}
 
 	return projects, nil

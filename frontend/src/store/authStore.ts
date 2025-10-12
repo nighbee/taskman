@@ -62,13 +62,36 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   
   clearError: () => set({ error: null }),
   
-  initializeAuth: () => {
+  initializeAuth: async () => {
     // Check if user is already authenticated via token
     if (apiClient.isAuthenticated()) {
-      // We could decode the JWT token here to get user info
-      // For now, we'll just set authenticated to true
-      // In a real app, you might want to verify the token with the backend
-      set({ isAuthenticated: true });
+      try {
+        // Verify token by making a request to get user info
+        // This will fail if token is expired or invalid
+        const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api/v1';
+        const response = await fetch(`${API_BASE_URL}/auth/me`, {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('auth_token')}`,
+            'Content-Type': 'application/json',
+          },
+        });
+        
+        if (response.ok) {
+          const userData = await response.json();
+          set({ 
+            user: userData.user, 
+            isAuthenticated: true 
+          });
+        } else {
+          // Token is invalid, clear it
+          apiClient.clearToken();
+          set({ user: null, isAuthenticated: false });
+        }
+      } catch (error) {
+        // Network error or token invalid, clear it
+        apiClient.clearToken();
+        set({ user: null, isAuthenticated: false });
+      }
     }
   },
 }));

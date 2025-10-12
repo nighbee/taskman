@@ -5,7 +5,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
-import { useDataStore, type User } from '@/store/dataStore';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useDataStore, type User, type ProjectStatus } from '@/store/dataStore';
 import { useAuthStore } from '@/store/authStore';
 import { toast } from 'sonner';
 
@@ -28,9 +29,10 @@ export const CreateProjectModal = ({
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [deadline, setDeadline] = useState('');
+  const [status, setStatus] = useState<ProjectStatus>('idea');
   const [selectedAssignees, setSelectedAssignees] = useState<string[]>([]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!name.trim()) {
@@ -40,23 +42,37 @@ export const CreateProjectModal = ({
 
     if (!user) return;
 
-    createProject(
-      orgId,
-      name,
-      description,
-      deadline,
-      selectedAssignees,
-      user.id
-    );
+    try {
+      // Convert date to ISO string if provided
+      let deadlineISO: string | undefined = undefined;
+      if (deadline) {
+        // Convert YYYY-MM-DD to ISO datetime string
+        deadlineISO = new Date(deadline + 'T23:59:59.000Z').toISOString();
+      }
 
-    toast.success('Project created successfully!');
-    onOpenChange(false);
-    
-    // Reset form
-    setName('');
-    setDescription('');
-    setDeadline('');
-    setSelectedAssignees([]);
+      await createProject(
+        orgId,
+        name,
+        description,
+        deadlineISO,
+        selectedAssignees,
+        user.id,
+        status
+      );
+
+      toast.success('Project created successfully!');
+      onOpenChange(false);
+      
+      // Reset form
+      setName('');
+      setDescription('');
+      setDeadline('');
+      setStatus('idea');
+      setSelectedAssignees([]);
+    } catch (error) {
+      console.error('Error creating project:', error);
+      toast.error('Failed to create project');
+    }
   };
 
   const toggleAssignee = (userId: string) => {
@@ -110,23 +126,41 @@ export const CreateProjectModal = ({
           </div>
 
           <div className="space-y-2">
+            <Label htmlFor="status">Project Stage</Label>
+            <Select value={status} onValueChange={(value: ProjectStatus) => setStatus(value)}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select project stage" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="idea">💡 Idea</SelectItem>
+                <SelectItem value="in-progress">🚀 In Progress</SelectItem>
+                <SelectItem value="finished">✅ Finished</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
             <Label>Assign Team Members</Label>
             <div className="space-y-2 max-h-[200px] overflow-y-auto border rounded-md p-3">
-              {orgMembers.map(member => (
-                <div key={member.id} className="flex items-center space-x-2">
-                  <Checkbox
-                    id={`member-${member.id}`}
-                    checked={selectedAssignees.includes(member.id)}
-                    onCheckedChange={() => toggleAssignee(member.id)}
-                  />
-                  <label
-                    htmlFor={`member-${member.id}`}
-                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
-                  >
-                    {member.fullName} ({member.email})
-                  </label>
-                </div>
-              ))}
+              {orgMembers && orgMembers.length > 0 ? (
+                orgMembers.map(member => (
+                  <div key={member.id} className="flex items-center space-x-2">
+                    <Checkbox
+                      id={`member-${member.id}`}
+                      checked={selectedAssignees.includes(member.id)}
+                      onCheckedChange={() => toggleAssignee(member.id)}
+                    />
+                    <label
+                      htmlFor={`member-${member.id}`}
+                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                    >
+                      {member.full_name} ({member.email})
+                    </label>
+                  </div>
+                ))
+              ) : (
+                <p className="text-sm text-muted-foreground">No team members available</p>
+              )}
             </div>
           </div>
 
