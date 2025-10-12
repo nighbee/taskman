@@ -81,7 +81,7 @@ func (s *TaskService) GetTaskByID(id uuid.UUID) (*models.Task, error) {
 
 // GetTasksByProject retrieves all tasks for a project
 func (s *TaskService) GetTasksByProject(projectID uuid.UUID, userID *uuid.UUID) ([]models.TaskResponse, error) {
-	var tasks []models.TaskResponse
+	var queryResults []models.TaskQueryResult
 
 	query := s.db.Table("tasks t").
 		Select("t.id, t.project_id, t.name, t.description, t.status, t.created_by, t.deadline, t.created_at, t.updated_at").
@@ -90,18 +90,31 @@ func (s *TaskService) GetTasksByProject(projectID uuid.UUID, userID *uuid.UUID) 
 	// Order by creation date
 	query = query.Order("t.created_at DESC")
 
-	err := query.Scan(&tasks).Error
+	err := query.Scan(&queryResults).Error
 	if err != nil {
 		return nil, fmt.Errorf("failed to get tasks: %w", err)
 	}
 
-	// Get assignees for each task
-	for i := range tasks {
-		assignees, err := s.GetTaskAssignees(tasks[i].ID)
+	// Convert to TaskResponse and get assignees for each task
+	tasks := make([]models.TaskResponse, len(queryResults))
+	for i, result := range queryResults {
+		assignees, err := s.GetTaskAssignees(result.ID)
 		if err != nil {
 			return nil, fmt.Errorf("failed to get task assignees: %w", err)
 		}
-		tasks[i].Assignees = assignees
+
+		tasks[i] = models.TaskResponse{
+			ID:          result.ID,
+			ProjectID:   result.ProjectID,
+			Name:        result.Name,
+			Description: result.Description,
+			Status:      result.Status,
+			CreatedBy:   result.CreatedBy,
+			Deadline:    result.Deadline,
+			CreatedAt:   result.CreatedAt,
+			UpdatedAt:   result.UpdatedAt,
+			Assignees:   assignees,
+		}
 	}
 
 	return tasks, nil

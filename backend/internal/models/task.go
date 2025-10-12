@@ -88,6 +88,19 @@ type TaskResponse struct {
 	Assignees   []UserResponse `json:"assignees"`
 }
 
+// TaskQueryResult represents the result from database query (without assignees)
+type TaskQueryResult struct {
+	ID          uuid.UUID  `json:"id"`
+	ProjectID   uuid.UUID  `json:"project_id"`
+	Name        string     `json:"name"`
+	Description string     `json:"description"`
+	Status      TaskStatus `json:"status"`
+	CreatedBy   uuid.UUID  `json:"created_by"`
+	Deadline    *time.Time `json:"deadline"`
+	CreatedAt   time.Time  `json:"created_at"`
+	UpdatedAt   time.Time  `json:"updated_at"`
+}
+
 // ToResponse converts a Task to TaskResponse
 func (t *Task) ToResponse() TaskResponse {
 	return TaskResponse{
