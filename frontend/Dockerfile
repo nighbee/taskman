@@ -4,11 +4,11 @@ FROM oven/bun:1 AS builder
 # Set working directory
 WORKDIR /app
 
-# Copy package files (Bun uses bun.lockb for locking)
-COPY package.json bun.lockb ./
+# Copy package files
+COPY package.json ./
 
 # Install dependencies (including dev dependencies needed for build)
-RUN npm ci
+RUN bun install
 
 # Copy source code
 COPY . .

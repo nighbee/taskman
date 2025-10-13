@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   # Backend API (connects to Supabase, no local DB needed)
   backend:
