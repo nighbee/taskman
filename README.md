@@ -9,7 +9,6 @@
   [![Backend](https://img.shields.io/badge/Backend-Go%201.21-00ADD8?logo=go&logoColor=white)](https://golang.org/)
   [![Frontend](https://img.shields.io/badge/Frontend-React%2018-61DAFB?logo=react&logoColor=white)](https://reactjs.org/)
   [![Database](https://img.shields.io/badge/Database-PostgreSQL-336791?logo=postgresql&logoColor=white)](https://www.postgresql.org/)
-  [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 </div>
 
 ---
@@ -28,7 +27,7 @@
 - [Security](#-security)
 - [Development](#-development)
 - [Contributing](#-contributing)
-- [License](#-license)
+- [Acknowledgments](#-acknowledgments)
 
 ---
 
@@ -587,12 +586,6 @@ We welcome contributions to TaskMan! Please follow these guidelines:
 - Add tests for new features
 - Update documentation as needed
 - Ensure all tests pass before submitting PR
-
----
-
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ---
 
